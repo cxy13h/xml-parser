@@ -363,45 +363,11 @@ def example_long_content_streaming():
         for event_type, data, level in parser.parse_chunk(chunk):
             chunk_events.append((event_type, data, level))
             if event_type == 'START_TAG':
-                print(f"   🏷️  开始标签: {data} (level {level})")
+                print(f"   🏷️  开始标签: {repr(data)} (level {level})")
             elif event_type == 'END_TAG':
-                print(f"   🏁 结束标签: {data} (level {level})")
+                print(f"   🏁 结束标签: {repr(data)} (level {level})")
             elif event_type == 'CONTENT':
                 print(f"   📝 内容: {repr(data)} (level {level})")
-                # 收集Description级别的内容
-                if level == 2:
-                    content_chunks.append(data)
-
-        if not chunk_events:
-            print("   ⏳ (等待更多数据...)")
-        print()
-
-    # 处理剩余内容
-    final_events = list(parser.finalize())
-    if final_events:
-        print("🔚 处理剩余内容:")
-        for event_type, data, level in final_events:
-            if event_type == 'CONTENT' and level == 2:
-                content_chunks.append(data)
-            print(f"   {event_type}: {len(data) if event_type == 'CONTENT' else data}")
-
-    # 验证长内容完整性
-    full_content = ''.join(content_chunks)
-    print("-" * 60)
-    print("📊 长内容处理统计:")
-    print(f"   原始长描述长度: {len(long_description)} 字符")
-    print(f"   解析后内容长度: {len(full_content)} 字符")
-    print(f"   内容块数量: {len(content_chunks)}")
-    print(f"   平均块大小: {len(full_content) // len(content_chunks) if content_chunks else 0} 字符")
-
-    # 验证内容完整性
-    if long_description in full_content:
-        print("   ✅ 长内容完整性验证通过")
-    else:
-        print("   ❌ 长内容完整性验证失败")
-
-    print("\n🎯 结论: 动态树形解析器能够完美处理长内容的流式输入，")
-    print("   保证内容完整性的同时提供实时的解析反馈！")
 
 
 def example_robustness_test():
