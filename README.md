@@ -76,15 +76,131 @@ parse_stream(chunks, handler)
 <End><Reason>ActionInput</Reason></End>
 ```
 
+## 外层XML解析器
+
+除了完整的XML解析器，我们还提供了一个**外层XML解析器**，专门用于只解析最外层标签的场景。
+
+### 使用场景
+
+在LLM输出中，我们经常遇到这样的情况：很难分清楚哪些是"标签"，哪些是"内容"，因为"内容"本身就可能是XML格式。
+
+例如：`<Start><Reason>Observation</Reason></Start>`
+
+- 使用**完整解析器**：会解析出 `Start`, `Reason` 两个标签
+- 使用**外层解析器**：只解析 `Start` 标签，`<Reason>Observation</Reason>` 被当作内容
+
+### 外层解析器示例
+
+```python
+from outer_xml_parser import OuterXMLParser
+
+parser = OuterXMLParser()
+text = "<Start><Reason>Observation</Reason></Start>"
+
+for event_type, data in parser.parse_chunk(text):
+    print(f"{event_type}: {data}")
+
+# 输出：
+# START_TAG: Start
+# CONTENT: <Reason>Observation</Reason>
+# END_TAG: Start
+```
+
+### 对比两种解析器
+
+| 特性 | 完整解析器 | 外层解析器 |
+|------|------------|------------|
+| 解析层级 | 所有层级 | 仅最外层 |
+| 内层XML | 解析为标签 | 当作内容 |
+| 适用场景 | 结构化XML | LLM输出解析 |
+| 复杂度 | 较高 | 较低 |
+
 ## 运行示例
 
 ```bash
-# 运行基本示例
+# 完整解析器示例
 python main.py
-
-# 运行详细示例
 python example.py
-
-# 运行测试
 python test_parser.py
+
+# 外层解析器示例
+python outer_example.py
+python test_outer_parser.py
 ```
+
+## API参考
+
+### StreamingXMLParser (完整解析器)
+
+解析所有层级的XML标签。
+
+#### 方法
+
+- `parse_chunk(chunk: str) -> Generator[Tuple[str, str], None, None]`
+  - 解析一个文本块，产生事件
+  - 返回: 事件生成器
+
+- `finalize() -> Generator[Tuple[str, str], None, None]`
+  - 完成解析，输出剩余的内容
+
+- `reset()` - 重置解析器状态
+
+### OuterXMLParser (外层解析器)
+
+只解析最外层的XML标签。
+
+#### 方法
+
+- `parse_chunk(chunk: str) -> Generator[Tuple[str, str], None, None]`
+  - 解析一个文本块，只产生外层标签事件
+  - 返回: 事件生成器
+
+- `finalize() -> Generator[Tuple[str, str], None, None]`
+  - 完成解析，输出剩余的内容
+
+- `reset()` - 重置解析器状态
+
+### 事件处理器
+
+#### XMLEventHandler (完整解析器)
+
+- `on_start_tag(tag_name: str)` - 处理起始标签事件
+- `on_end_tag(tag_name: str)` - 处理结束标签事件
+- `on_content(content: str)` - 处理内容事件
+
+#### OuterXMLEventHandler (外层解析器)
+
+- `on_start_tag(tag_name: str)` - 处理外层起始标签事件
+- `on_end_tag(tag_name: str)` - 处理外层结束标签事件
+- `on_content(content: str)` - 处理内容事件（可能包含内层XML）
+
+### 便利函数
+
+- `parse_stream(chunks, event_handler: XMLEventHandler)` - 使用完整解析器
+- `parse_outer_stream(chunks, event_handler: OuterXMLEventHandler)` - 使用外层解析器
+
+## 设计原理
+
+### 完整解析器
+
+使用状态机跟踪解析状态：
+1. **CONTENT**: 在标签外，解析内容
+2. **IN_START_TAG**: 在起始标签内
+3. **IN_END_TAG**: 在结束标签内
+
+### 外层解析器
+
+使用简化的状态机：
+1. **CONTENT**: 在最外层标签外
+2. **IN_TAG**: 在最外层标签内
+3. **IN_CONTENT**: 在最外层标签内收集内容
+
+外层解析器通过匹配完整的结束标签模式（如 `</Start>`）来识别最外层标签的结束。
+
+## 注意事项
+
+- 两个解析器都是为类XML格式设计的，不是完整的XML解析器
+- 不支持XML属性、命名空间等高级特性
+- 专注于简单的标签结构，适合LLM输出格式
+- 在流式处理中，内容可能会被分成多个CONTENT事件，这是正常行为
+- 外层解析器特别适合处理LLM输出中的嵌套XML内容
