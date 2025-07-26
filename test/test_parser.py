@@ -3,8 +3,7 @@
 """
 
 import unittest
-from streaming_xml_parser import StreamingXMLParser, XMLEventHandler
-from xml_events import XMLEventType
+from src.streaming_xml_parser import StreamingXMLParser, XMLEventHandler
 
 
 class TestStreamingXMLParser(unittest.TestCase):
@@ -210,7 +209,7 @@ class TestXMLEventHandler(unittest.TestCase):
     
     def test_event_handler(self):
         """测试事件处理器"""
-        from streaming_xml_parser import parse_stream
+        from src.streaming_xml_parser import parse_stream
         
         handler = TestEventHandler()
         chunks = ["<tag>", "content", "</tag>"]

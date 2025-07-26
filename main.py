@@ -4,7 +4,7 @@
 演示如何使用StreamingXMLParser处理LLM的流式输出
 """
 
-from streaming_xml_parser import StreamingXMLParser, XMLEventHandler
+from src.streaming_xml_parser import StreamingXMLParser
 
 
 def main():

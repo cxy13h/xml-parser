@@ -16,10 +16,10 @@
 - (XMLEventType.CONTENT, text_chunk, level): 内容（包括伪标签）
 """
 
-from typing import Dict, List, Set, Optional, Tuple, Generator
+from typing import Dict, List, Optional, Tuple, Generator
 from enum import Enum
 import re
-from xml_events import XMLEventType
+from src.common.xml_events import XMLEventType
 
 
 class TagNode:

@@ -10,10 +10,9 @@
 
 import time
 import asyncio
-from streaming_xml_parser import StreamingXMLParser
-from outer_xml_parser import OuterXMLParser
-from dynamic_tree_parser import DynamicTreeParser
-from xml_events import XMLEventType
+from src.streaming_xml_parser import StreamingXMLParser
+from src.outer_xml_parser import OuterXMLParser
+from src.dynamic_tree_parser import DynamicTreeParser
 
 
 def demo_network_streaming():

@@ -5,7 +5,7 @@
 """
 
 import unittest
-from dynamic_tree_parser import DynamicTreeParser
+from src.dynamic_tree_parser import DynamicTreeParser
 
 
 class TestComplexCases(unittest.TestCase):

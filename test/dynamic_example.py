@@ -5,8 +5,7 @@
 智能识别真正的标签和内容
 """
 
-import time
-from dynamic_tree_parser import DynamicTreeParser, DynamicTreeEventHandler, parse_dynamic_stream
+from src.dynamic_tree_parser import DynamicTreeParser, DynamicTreeEventHandler
 
 
 class DynamicTreeHandler(DynamicTreeEventHandler):

@@ -15,8 +15,8 @@
 
 import re
 from enum import Enum
-from typing import Generator, Tuple, Optional, List
-from xml_events import XMLEventType
+from typing import Generator, Tuple, Optional
+from src.common.xml_events import XMLEventType
 
 
 class OuterParserState(Enum):

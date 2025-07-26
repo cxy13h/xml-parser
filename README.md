@@ -63,13 +63,13 @@
 ### 💫 核心概念：真正的流式处理
 
 ```python
-from streaming_xml_parser import StreamingXMLParser
+from src.streaming_xml_parser import StreamingXMLParser
 
 # 模拟网络数据流 - 数据分块到达
 chunks = [
-    "<Action><Tool",      # 第1块：不完整的开始标签
+    "<Action><Tool",  # 第1块：不完整的开始标签
     "Name>image_gen</Tool",  # 第2块：跨越多个标签
-    "Name><Description>AI图像", # 第3块：标签和内容混合
+    "Name><Description>AI图像",  # 第3块：标签和内容混合
     "生成</Description></Action>"  # 第4块：结束部分
 ]
 
@@ -77,7 +77,7 @@ parser = StreamingXMLParser()
 
 print("🌊 流式解析过程：")
 for i, chunk in enumerate(chunks):
-    print(f"\n📦 接收数据块 {i+1}: {repr(chunk)}")
+    print(f"\n📦 接收数据块 {i + 1}: {repr(chunk)}")
 
     # 实时解析每个数据块
     for event_type, data in parser.parse_chunk(chunk):
@@ -115,7 +115,7 @@ for event_type, data in parser.finalize():
 #### 1️⃣ 完整XML解析器 - 解析所有标签层级
 
 ```python
-from streaming_xml_parser import StreamingXMLParser
+from src.streaming_xml_parser import StreamingXMLParser
 
 # 模拟LLM逐字符输出
 llm_output = "<Thought><Content>我需要调用工具</Content></Thought>"
@@ -132,7 +132,7 @@ for char in llm_output:
 #### 2️⃣ 外层XML解析器 - 只解析最外层结构
 
 ```python
-from outer_xml_parser import OuterXMLParser
+from src.outer_xml_parser import OuterXMLParser
 
 # 模拟包含嵌套XML的流式数据
 stream_data = "<Response><Data><User>张三</User><Age>25</Age></Data></Response>"
@@ -149,7 +149,7 @@ for chunk in [stream_data[:20], stream_data[20:40], stream_data[40:]]:
 #### 3️⃣ 动态树形解析器 - 智能识别真假标签
 
 ```python
-from dynamic_tree_parser import DynamicTreeParser
+from src.dynamic_tree_parser import DynamicTreeParser
 
 # 定义已知的标签结构
 hierarchy = {"Action": ["ToolName"], "Response": ["Message"]}
@@ -193,7 +193,9 @@ def simulate_llm_stream():
     for char in response:
         yield char  # 逐字符流式输出
 
-from outer_xml_parser import OuterXMLParser
+
+from src.outer_xml_parser import OuterXMLParser
+
 parser = OuterXMLParser()
 
 print("🤖 LLM流式输出解析：")
@@ -206,7 +208,8 @@ for chunk in simulate_llm_stream():
 
 ```python
 import asyncio
-from streaming_xml_parser import StreamingXMLParser
+from src.streaming_xml_parser import StreamingXMLParser
+
 
 async def process_network_stream(websocket):
     parser = StreamingXMLParser()

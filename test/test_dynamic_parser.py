@@ -3,7 +3,7 @@
 """
 
 import unittest
-from dynamic_tree_parser import DynamicTreeParser, DynamicTreeEventHandler
+from src.dynamic_tree_parser import DynamicTreeParser, DynamicTreeEventHandler
 
 
 class TestDynamicTreeParser(unittest.TestCase):
@@ -279,7 +279,7 @@ class TestDynamicTreeEventHandler(unittest.TestCase):
     
     def test_event_handler(self):
         """测试事件处理器"""
-        from dynamic_tree_parser import parse_dynamic_stream
+        from src.dynamic_tree_parser import parse_dynamic_stream
         
         handler = TestEventHandler()
         hierarchy = {"Action": ["ToolName"]}

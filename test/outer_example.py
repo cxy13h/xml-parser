@@ -5,7 +5,7 @@
 """
 
 import time
-from outer_xml_parser import OuterXMLParser, OuterXMLEventHandler, parse_outer_stream
+from src.outer_xml_parser import OuterXMLParser, OuterXMLEventHandler, parse_outer_stream
 
 
 class LLMOuterHandler(OuterXMLEventHandler):
@@ -129,7 +129,7 @@ def example_comparison():
     
     # 完整解析器（用于对比）
     print("🔹 完整解析器结果:")
-    from streaming_xml_parser import StreamingXMLParser
+    from src.streaming_xml_parser import StreamingXMLParser
     full_parser = StreamingXMLParser()
     for event_type, data in full_parser.parse_chunk(test_xml):
         print(f"  {event_type}: {repr(data)}")

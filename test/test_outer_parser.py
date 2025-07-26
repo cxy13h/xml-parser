@@ -3,7 +3,7 @@
 """
 
 import unittest
-from outer_xml_parser import OuterXMLParser, OuterXMLEventHandler
+from src.outer_xml_parser import OuterXMLParser, OuterXMLEventHandler
 
 
 class TestOuterXMLParser(unittest.TestCase):
@@ -212,7 +212,7 @@ class TestOuterXMLEventHandler(unittest.TestCase):
     
     def test_event_handler(self):
         """测试事件处理器"""
-        from outer_xml_parser import parse_outer_stream
+        from src.outer_xml_parser import parse_outer_stream
         
         handler = TestEventHandler()
         chunks = ["<Start>", "<Reason>test</Reason>", "</Start>"]

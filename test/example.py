@@ -4,8 +4,7 @@
 演示如何使用StreamingXMLParser处理LLM的流式输出
 """
 
-import time
-from streaming_xml_parser import StreamingXMLParser, XMLEventHandler, parse_stream
+from src.streaming_xml_parser import StreamingXMLParser, XMLEventHandler, parse_stream
 
 
 class LLMOutputHandler(XMLEventHandler):
