@@ -145,6 +145,55 @@ class TestDynamicTreeParser(unittest.TestCase):
         merged_events = self._merge_content_events(events)
         self.assertEqual(merged_events, expected_structure)
     
+    def test_case_5_valid_tag_after_invalid_tags(self):
+        """测试情况5：有效标签出现在无效标签之后"""
+        hierarchy = {"Action": ["Feature"]}
+        parser = DynamicTreeParser(hierarchy)
+
+        text = "<Action><ToolName>image_gen</ToolName><Description>通义万相是一个图像生成服务，输入文本描述，可以得到图片的URL</Description><Feature>第三方MCP工具</Feature></Action>"
+
+        events = []
+        for event in parser.parse_chunk(text):
+            events.append(event)
+        for event in parser.finalize():
+            events.append(event)
+
+        print("\n测试情况5 - 有效标签出现在无效标签之后:")
+        print(f"输入: {text}")
+        print("事件:")
+        for event in events:
+            print(f"  {event}")
+
+        # 验证标签结构
+        start_tags = [e for e in events if e[0] == 'START_TAG']
+        end_tags = [e for e in events if e[0] == 'END_TAG']
+        content_events = [e for e in events if e[0] == 'CONTENT']
+
+        # 应该识别Action和Feature两个标签
+        self.assertEqual(len(start_tags), 2)
+        self.assertEqual(len(end_tags), 2)
+        self.assertEqual(start_tags[0], ('START_TAG', 'Action', 0))
+        self.assertEqual(start_tags[1], ('START_TAG', 'Feature', 1))
+        self.assertEqual(end_tags[0], ('END_TAG', 'Feature', 1))
+        self.assertEqual(end_tags[1], ('END_TAG', 'Action', 0))
+
+        # 验证内容分布
+        action_content = ""
+        feature_content = ""
+
+        for event_type, data, level in events:
+            if event_type == 'CONTENT':
+                if level == 1:  # Action内的内容
+                    action_content += data
+                elif level == 2:  # Feature内的内容
+                    feature_content += data
+
+        expected_action_content = "<ToolName>image_gen</ToolName><Description>通义万相是一个图像生成服务，输入文本描述，可以得到图片的URL</Description>"
+        expected_feature_content = "第三方MCP工具"
+
+        self.assertEqual(action_content, expected_action_content)
+        self.assertEqual(feature_content, expected_feature_content)
+
     def test_streaming_processing(self):
         """测试流式处理"""
         hierarchy = {"Action": ["ToolName", "Description"]}
