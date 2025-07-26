@@ -206,24 +206,196 @@ class TestComplexCases(unittest.TestCase):
     def test_very_long_content(self):
         """测试非常长的内容"""
         print("\n=== 测试7：非常长的内容 ===")
-        
+
         hierarchy = {"Action": ["Feature"]}
         parser = DynamicTreeParser(hierarchy)
-        
+
         # 生成很长的内容
         long_content = "很长的内容 " * 1000  # 约10000字符
         text = f"<Action><Feature>{long_content}</Feature></Action>"
-        
+
         print(f"输入长度: {len(text)} 字符")
-        
+
         events = list(parser.parse_chunk(text)) + list(parser.finalize())
-        
+
         # 验证长内容被正确处理
         content_events = [e for e in events if e[0] == 'CONTENT']
         total_content = ''.join(e[1] for e in content_events if e[2] == 2)  # Feature内的内容
-        
+
         self.assertEqual(total_content, long_content)
         print(f"✅ 长内容处理正确，长度: {len(total_content)}")
+
+    def test_weird_tag_names(self):
+        """测试奇怪的标签名"""
+        print("\n=== 测试8：奇怪的标签名 ===")
+
+        # 各种奇怪但合法的标签名
+        weird_hierarchy = {
+            "Action_v2_final_REAL": ["Tool-Name-With-Dashes", "Feature_2024_Q4"],
+            "Tool-Name-With-Dashes": ["Sub_Component_123"],
+            "Feature_2024_Q4": ["Meta-Data-v1_0"]
+        }
+
+        parser = DynamicTreeParser(weird_hierarchy)
+
+        test_cases = [
+            # 测试1：带下划线和数字的标签
+            "<Action_v2_final_REAL><Tool-Name-With-Dashes><Sub_Component_123>内容1</Sub_Component_123></Tool-Name-With-Dashes></Action_v2_final_REAL>",
+
+            # 测试2：混合各种命名风格
+            "<Action_v2_final_REAL><Feature_2024_Q4><Meta-Data-v1_0>元数据内容</Meta-Data-v1_0></Feature_2024_Q4></Action_v2_final_REAL>",
+
+            # 测试3：奇怪标签名与普通标签名混合
+            "<Action_v2_final_REAL><NormalTag><Tool-Name-With-Dashes>被包围的工具</Tool-Name-With-Dashes></NormalTag><Feature_2024_Q4>正确位置</Feature_2024_Q4></Action_v2_final_REAL>",
+        ]
+
+        for i, text in enumerate(test_cases):
+            print(f"\n子测试 8.{i+1}:")
+            print(f"输入: {text}")
+            parser.reset()
+
+            events = list(parser.parse_chunk(text)) + list(parser.finalize())
+
+            print("事件:")
+            for event in events:
+                print(f"  {event}")
+
+            # 验证奇怪的标签名被正确识别
+            start_tags = [e for e in events if e[0] == 'START_TAG']
+            tag_names = [e[1] for e in start_tags]
+
+            # 至少应该识别根标签
+            self.assertIn("Action_v2_final_REAL", tag_names)
+
+    def test_extreme_weird_tag_names(self):
+        """测试极端奇怪的标签名"""
+        print("\n=== 测试9：极端奇怪的标签名 ===")
+
+        # 更加极端的标签名（但仍然符合XML规范）
+        extreme_hierarchy = {
+            "A1B2C3_D4E5F6-G7H8I9": ["X_Y_Z_123_ABC_DEF"],
+            "Component_v1_2_3_FINAL_RELEASE_2024_Q4_HOTFIX": ["Sub_Module_Alpha_Beta_Gamma"],
+            "API_ENDPOINT_V2_LEGACY_DEPRECATED_BUT_STILL_USED": ["Response_Data_Container"]
+        }
+
+        parser = DynamicTreeParser(extreme_hierarchy)
+
+        # 构建包含极端标签名的XML
+        text = """<A1B2C3_D4E5F6-G7H8I9>
+            <X_Y_Z_123_ABC_DEF>极端标签内容</X_Y_Z_123_ABC_DEF>
+            <Some_Random_Invalid_Tag>
+                <Component_v1_2_3_FINAL_RELEASE_2024_Q4_HOTFIX>嵌套在无效标签中</Component_v1_2_3_FINAL_RELEASE_2024_Q4_HOTFIX>
+            </Some_Random_Invalid_Tag>
+            <Component_v1_2_3_FINAL_RELEASE_2024_Q4_HOTFIX>
+                <Sub_Module_Alpha_Beta_Gamma>正确位置的内容</Sub_Module_Alpha_Beta_Gamma>
+            </Component_v1_2_3_FINAL_RELEASE_2024_Q4_HOTFIX>
+        </A1B2C3_D4E5F6-G7H8I9>"""
+
+        print(f"输入: {text}")
+
+        events = list(parser.parse_chunk(text)) + list(parser.finalize())
+
+        print("关键事件:")
+        for event in events:
+            if event[0] in ['START_TAG', 'END_TAG']:
+                print(f"  {event}")
+
+        # 验证极端标签名被正确处理
+        start_tags = [e for e in events if e[0] == 'START_TAG']
+        tag_names = [e[1] for e in start_tags]
+
+        # 只有在正确位置的标签应该被识别
+        # Component_v1_2_3_FINAL_RELEASE_2024_Q4_HOTFIX 在无效标签中，不应该被识别
+        expected_recognized_tags = [
+            "A1B2C3_D4E5F6-G7H8I9",
+            "X_Y_Z_123_ABC_DEF"
+        ]
+
+        for expected_tag in expected_recognized_tags:
+            self.assertIn(expected_tag, tag_names, f"标签 {expected_tag} 应该被识别")
+
+        # 验证被无效标签包围的标签不被识别
+        self.assertNotIn("Component_v1_2_3_FINAL_RELEASE_2024_Q4_HOTFIX", tag_names,
+                        "被无效标签包围的标签不应该被识别")
+
+    def test_tag_names_with_numbers_and_special_chars(self):
+        """测试包含数字和特殊字符的标签名"""
+        print("\n=== 测试10：包含数字和特殊字符的标签名 ===")
+
+        # 测试各种合法的XML标签名模式
+        special_hierarchy = {
+            "Tag123": ["SubTag456"],
+            "Tag_With_Underscores": ["Another_Tag_123"],
+            "Tag-With-Dashes": ["Sub-Tag-789"],
+            "MixedCase_Tag-123": ["camelCaseTag", "snake_case_tag", "kebab-case-tag"]
+        }
+
+        parser = DynamicTreeParser(special_hierarchy)
+
+        test_cases = [
+            # 数字标签
+            "<Tag123><SubTag456>数字标签内容</SubTag456></Tag123>",
+
+            # 下划线标签
+            "<Tag_With_Underscores><Another_Tag_123>下划线标签内容</Another_Tag_123></Tag_With_Underscores>",
+
+            # 连字符标签
+            "<Tag-With-Dashes><Sub-Tag-789>连字符标签内容</Sub-Tag-789></Tag-With-Dashes>",
+
+            # 混合命名风格
+            "<MixedCase_Tag-123><camelCaseTag>驼峰</camelCaseTag><snake_case_tag>下划线</snake_case_tag><kebab-case-tag>连字符</kebab-case-tag></MixedCase_Tag-123>",
+
+            # 复杂嵌套情况
+            "<Tag123><InvalidTag><SubTag456>被包围</SubTag456></InvalidTag><SubTag456>正确位置</SubTag456></Tag123>"
+        ]
+
+        for i, text in enumerate(test_cases):
+            print(f"\n子测试 10.{i+1}:")
+            print(f"输入: {text}")
+            parser.reset()
+
+            events = list(parser.parse_chunk(text)) + list(parser.finalize())
+
+            print("事件:")
+            for event in events:
+                print(f"  {event}")
+
+            # 验证特殊字符标签被正确处理
+            start_tags = [e for e in events if e[0] == 'START_TAG']
+            self.assertGreater(len(start_tags), 0, "应该至少识别一个标签")
+
+    def test_case_sensitivity(self):
+        """测试大小写敏感性"""
+        print("\n=== 测试11：大小写敏感性 ===")
+
+        hierarchy = {
+            "Action": ["Feature"],
+            "action": ["feature"],  # 小写版本
+            "ACTION": ["FEATURE"]   # 大写版本
+        }
+
+        parser = DynamicTreeParser(hierarchy)
+
+        # 测试大小写敏感
+        text = "<Action><Feature>大写A</Feature></Action><action><feature>小写a</feature></action><ACTION><FEATURE>全大写</FEATURE></ACTION><Action><feature>混合大小写</feature></Action>"
+
+        print(f"输入: {text}")
+
+        events = list(parser.parse_chunk(text)) + list(parser.finalize())
+
+        print("事件:")
+        for event in events:
+            print(f"  {event}")
+
+        # 验证大小写敏感性
+        start_tags = [e for e in events if e[0] == 'START_TAG']
+        tag_names = [e[1] for e in start_tags]
+
+        # 应该识别所有正确大小写的标签
+        expected_tags = ["Action", "Feature", "action", "feature", "ACTION", "FEATURE"]
+        for tag in expected_tags:
+            if tag in ["Action", "action", "ACTION"]:  # 根标签
+                self.assertIn(tag, tag_names)
 
 
 if __name__ == '__main__':
