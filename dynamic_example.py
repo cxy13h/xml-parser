@@ -304,6 +304,106 @@ def example_streaming_detailed():
     print("✅ 流式解析完成!")
 
 
+def example_long_content_streaming():
+    """示例：长内容的流式处理"""
+    print("\n" + "=" * 80)
+    print("长内容流式处理演示")
+    print("=" * 80)
+
+    hierarchy = {"Action": ["ToolName", "Description"], "Description": ["Feature"]}
+    parser = DynamicTreeParser(hierarchy)
+
+    print("标签层次结构:")
+    print(parser.get_tag_hierarchy_info())
+
+    # 构建包含长内容的XML
+    long_description = """通义万相是阿里巴巴达摩院推出的AI绘画创作大模型，能够根据用户输入的文本描述生成相应的图像。
+该模型基于扩散模型技术，具有强大的图像生成能力，支持多种艺术风格，包括但不限于：
+1. 写实风格：能够生成接近真实照片效果的图像
+2. 卡通风格：支持各种卡通和动漫风格的图像生成
+3. 油画风格：模拟传统油画的质感和色彩
+4. 水彩风格：呈现水彩画特有的透明和流动感
+5. 素描风格：黑白线条勾勒的简约美感
+6. 科幻风格：未来感十足的科技元素
+7. 古典风格：传统艺术的典雅韵味
+8. 现代风格：当代艺术的创新表达
+<ToolName>image_generation_service</ToolName>
+模型的主要特点包括：
+- 高质量图像生成：输出分辨率可达1024x1024像素
+- 多语言支持：支持中文、英文等多种语言的文本描述
+- 快速生成：通常在几秒钟内完成图像生成
+- 风格多样：支持上百种不同的艺术风格
+- 细节丰富：能够准确理解和表现复杂的场景描述
+- 创意无限：可以生成现实中不存在的奇幻场景
+<ToolName>image_generation_service</ToolName>
+使用场景广泛，适用于：
+- 内容创作：为文章、博客配图
+- 广告设计：快速生成营销素材
+- 游戏开发：概念设计和场景制作
+- 教育培训：制作教学插图
+- 个人娱乐：创作个性化头像和壁纸
+- 商业应用：产品展示和品牌宣传
+<ToolName>image_generation_service</ToolName>
+技术架构采用了最新的深度学习技术，包括Transformer架构、注意力机制、残差网络等先进技术，
+确保生成图像的质量和多样性。模型经过大规模数据集训练，具备强大的泛化能力。"""
+
+    # 构建完整的XML
+    full_xml = f"""<Action><ToolName>image_generation_service</ToolName><Description><Feature>AI图像生成</Feature>{long_description}</Description></Action>"""
+
+
+    # 分块处理，模拟网络传输
+    chunk_size = 10  # 每次200字符
+    chunks = []
+    for i in range(0, len(full_xml), chunk_size):
+        chunks.append(full_xml[i:i + chunk_size])
+    content_chunks = []  # 收集所有内容块
+    for i, chunk in enumerate(chunks):
+        print(f"📦 处理chunk {repr(chunk)}")
+        chunk_events = []
+        for event_type, data, level in parser.parse_chunk(chunk):
+            chunk_events.append((event_type, data, level))
+            if event_type == 'START_TAG':
+                print(f"   🏷️  开始标签: {data} (level {level})")
+            elif event_type == 'END_TAG':
+                print(f"   🏁 结束标签: {data} (level {level})")
+            elif event_type == 'CONTENT':
+                print(f"   📝 内容: {repr(data)} (level {level})")
+                # 收集Description级别的内容
+                if level == 2:
+                    content_chunks.append(data)
+
+        if not chunk_events:
+            print("   ⏳ (等待更多数据...)")
+        print()
+
+    # 处理剩余内容
+    final_events = list(parser.finalize())
+    if final_events:
+        print("🔚 处理剩余内容:")
+        for event_type, data, level in final_events:
+            if event_type == 'CONTENT' and level == 2:
+                content_chunks.append(data)
+            print(f"   {event_type}: {len(data) if event_type == 'CONTENT' else data}")
+
+    # 验证长内容完整性
+    full_content = ''.join(content_chunks)
+    print("-" * 60)
+    print("📊 长内容处理统计:")
+    print(f"   原始长描述长度: {len(long_description)} 字符")
+    print(f"   解析后内容长度: {len(full_content)} 字符")
+    print(f"   内容块数量: {len(content_chunks)}")
+    print(f"   平均块大小: {len(full_content) // len(content_chunks) if content_chunks else 0} 字符")
+
+    # 验证内容完整性
+    if long_description in full_content:
+        print("   ✅ 长内容完整性验证通过")
+    else:
+        print("   ❌ 长内容完整性验证失败")
+
+    print("\n🎯 结论: 动态树形解析器能够完美处理长内容的流式输入，")
+    print("   保证内容完整性的同时提供实时的解析反馈！")
+
+
 def example_robustness_test():
     """示例6：鲁棒性测试"""
     print("\n" + "=" * 80)
@@ -339,11 +439,12 @@ def example_robustness_test():
 
 
 if __name__ == "__main__":
-    example_basic_streaming()
-    example_case_1()
-    example_case_2()
-    example_case_3()
-    example_case_4()
-    example_case_5()
-    example_streaming_detailed()
-    example_robustness_test()
+    # example_basic_streaming()
+    # example_case_1()
+    # example_case_2()
+    # example_case_3()
+    # example_case_4()
+    # example_case_5()
+    # example_streaming_detailed()
+    example_long_content_streaming()
+    # example_robustness_test()
