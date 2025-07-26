@@ -3,14 +3,15 @@
 
 该解析器能够处理流式输入的XML文本，实时产生解析事件。
 支持的事件类型：
-- ('START_TAG', tag_name): 完整的起始标签
-- ('END_TAG', tag_name): 完整的结束标签  
-- ('CONTENT', text_chunk): 标签间的文本内容
+- (XMLEventType.START_TAG, tag_name): 完整的起始标签
+- (XMLEventType.END_TAG, tag_name): 完整的结束标签
+- (XMLEventType.CONTENT, text_chunk): 标签间的文本内容
 """
 
 import re
 from enum import Enum
 from typing import Generator, Tuple, Optional
+from xml_events import XMLEventType
 
 
 class ParserState(Enum):
@@ -59,7 +60,7 @@ class StreamingXMLParser:
                     if self.position < len(self.buffer):
                         content = self.buffer[self.position:]
                         if content:
-                            yield ('CONTENT', content)
+                            yield (XMLEventType.CONTENT, content)
                         self.position = len(self.buffer)
                     break
                 else:
@@ -67,7 +68,7 @@ class StreamingXMLParser:
                     if lt_pos > self.position:
                         content = self.buffer[self.position:lt_pos]
                         if content:
-                            yield ('CONTENT', content)
+                            yield (XMLEventType.CONTENT, content)
 
                     # 检查是否是结束标签
                     if lt_pos + 1 < len(self.buffer) and self.buffer[lt_pos + 1] == '/':
@@ -94,7 +95,7 @@ class StreamingXMLParser:
                     tag_content = self.buffer[self.position:gt_pos]
                     tag_name = self._extract_tag_name(tag_content)
                     if tag_name:
-                        yield ('START_TAG', tag_name)
+                        yield (XMLEventType.START_TAG, tag_name)
 
                     self.position = gt_pos + 1
                     self.state = ParserState.CONTENT
@@ -111,7 +112,7 @@ class StreamingXMLParser:
                     tag_content = self.buffer[self.position:gt_pos]
                     tag_name = self._extract_tag_name(tag_content)
                     if tag_name:
-                        yield ('END_TAG', tag_name)
+                        yield (XMLEventType.END_TAG, tag_name)
 
                     self.position = gt_pos + 1
                     self.state = ParserState.CONTENT
@@ -151,7 +152,7 @@ class StreamingXMLParser:
         if self.state == ParserState.CONTENT and self.position < len(self.buffer):
             remaining_content = self.buffer[self.position:]
             if remaining_content:
-                yield ('CONTENT', remaining_content)
+                yield (XMLEventType.CONTENT, remaining_content)
 
         # 重置状态
         self.buffer = ""

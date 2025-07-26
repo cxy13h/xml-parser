@@ -4,6 +4,7 @@
 
 import unittest
 from streaming_xml_parser import StreamingXMLParser, XMLEventHandler
+from xml_events import XMLEventType
 
 
 class TestStreamingXMLParser(unittest.TestCase):

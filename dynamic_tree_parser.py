@@ -11,14 +11,15 @@
 4. 流式处理：支持任意大小的chunk输入
 
 事件类型：
-- ('START_TAG', tag_name, level): 识别到的真正标签开始
-- ('END_TAG', tag_name, level): 识别到的真正标签结束
-- ('CONTENT', text_chunk): 内容（包括伪标签）
+- (XMLEventType.START_TAG, tag_name, level): 识别到的真正标签开始
+- (XMLEventType.END_TAG, tag_name, level): 识别到的真正标签结束
+- (XMLEventType.CONTENT, text_chunk, level): 内容（包括伪标签）
 """
 
 from typing import Dict, List, Set, Optional, Tuple, Generator
 from enum import Enum
 import re
+from xml_events import XMLEventType
 
 
 class TagNode:
@@ -136,7 +137,7 @@ class DynamicTreeParser:
                 if lt_pos == -1:
                     # 没有找到标签，输出剩余内容
                     if self.buffer.strip():
-                        yield ('CONTENT', self.buffer, 0)
+                        yield (XMLEventType.CONTENT, self.buffer, 0)
                     self.buffer = ""
                     break
                 else:
@@ -144,7 +145,7 @@ class DynamicTreeParser:
                     if lt_pos > 0:
                         content = self.buffer[:lt_pos]
                         if content.strip():
-                            yield ('CONTENT', content, 0)
+                            yield (XMLEventType.CONTENT, content, 0)
                     
                     # 进入标签解析状态
                     self.state = ParserState.IN_TAG
@@ -194,7 +195,7 @@ class DynamicTreeParser:
                     if not tag_processed:
                         level = self.tag_stack[-1].level + 1 if self.tag_stack else 0
                         full_tag = f"<{tag_content}>"
-                        yield ('CONTENT', full_tag, level)
+                        yield (XMLEventType.CONTENT, full_tag, level)
 
                     # 根据当前状态决定下一步
                     if self.tag_stack:
@@ -223,10 +224,10 @@ class DynamicTreeParser:
                     if end_pos > 0:
                         content = self.buffer[:end_pos]
                         if content:
-                            yield ('CONTENT', content, current_tag.level + 1)
-                    
+                            yield (XMLEventType.CONTENT, content, current_tag.level + 1)
+
                     # 处理结束标签
-                    yield ('END_TAG', current_tag.name, current_tag.level)
+                    yield (XMLEventType.END_TAG, current_tag.name, current_tag.level)
                     self.tag_stack.pop()
                     self.buffer = self.buffer[end_pos + len(end_tag_pattern):]
                     
@@ -241,7 +242,7 @@ class DynamicTreeParser:
                     if lt_pos > 0:
                         content = self.buffer[:lt_pos]
                         if content:
-                            yield ('CONTENT', content, current_tag.level + 1)
+                            yield (XMLEventType.CONTENT, content, current_tag.level + 1)
                     
                     # 进入标签解析状态
                     self.state = ParserState.IN_TAG
@@ -250,7 +251,7 @@ class DynamicTreeParser:
                 else:
                     # 没有找到任何标签，输出剩余内容
                     if self.buffer:
-                        yield ('CONTENT', self.buffer, current_tag.level + 1)
+                        yield (XMLEventType.CONTENT, self.buffer, current_tag.level + 1)
                     self.buffer = ""
                     break
     
@@ -263,7 +264,7 @@ class DynamicTreeParser:
                 node = self.tag_tree[tag_name]
                 self.tag_stack.append(node)
                 self.current_context = node
-                return ('START_TAG', tag_name, node.level)
+                return (XMLEventType.START_TAG, tag_name, node.level)
         else:
             # 当前在某个标签内，检查是否是有效的直接子标签，且没有无效标签包围
             current_tag = self.tag_stack[-1]
@@ -273,7 +274,7 @@ class DynamicTreeParser:
                 child_node = current_tag.get_child(tag_name)
                 self.tag_stack.append(child_node)
                 self.current_context = child_node
-                return ('START_TAG', tag_name, child_node.level)
+                return (XMLEventType.START_TAG, tag_name, child_node.level)
 
         # 如果不是有效标签，不产生事件（将作为内容处理）
         return None
@@ -284,7 +285,7 @@ class DynamicTreeParser:
         if self.tag_stack and self.tag_stack[-1].name == tag_name:
             node = self.tag_stack.pop()
             self.current_context = self.tag_stack[-1] if self.tag_stack else None
-            return ('END_TAG', tag_name, node.level)
+            return (XMLEventType.END_TAG, tag_name, node.level)
         
         # 如果不匹配，不产生事件（将作为内容处理）
         return None
@@ -314,7 +315,7 @@ class DynamicTreeParser:
         if self.buffer:
             level = self.tag_stack[-1].level + 1 if self.tag_stack else 0
             if self.buffer.strip():
-                yield ('CONTENT', self.buffer, level)
+                yield (XMLEventType.CONTENT, self.buffer, level)
         
         # 重置状态
         self.buffer = ""

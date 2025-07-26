@@ -8,14 +8,15 @@
 - <Reason>Observation</Reason> 被当作 Start 标签的内容
 
 支持的事件类型：
-- ('START_TAG', tag_name): 最外层的起始标签
-- ('END_TAG', tag_name): 最外层的结束标签  
-- ('CONTENT', text_chunk): 标签间的文本内容（可能包含内层XML）
+- (XMLEventType.START_TAG, tag_name): 最外层的起始标签
+- (XMLEventType.END_TAG, tag_name): 最外层的结束标签
+- (XMLEventType.CONTENT, text_chunk): 标签间的文本内容（可能包含内层XML）
 """
 
 import re
 from enum import Enum
 from typing import Generator, Tuple, Optional, List
+from xml_events import XMLEventType
 
 
 class OuterParserState(Enum):
@@ -62,7 +63,7 @@ class OuterXMLParser:
                 if lt_pos == -1:
                     # 没有找到标签，输出剩余内容并等待更多数据
                     if self.buffer.strip():
-                        yield ('CONTENT', self.buffer)
+                        yield (XMLEventType.CONTENT, self.buffer)
                     self.buffer = ""
                     break
                 else:
@@ -70,7 +71,7 @@ class OuterXMLParser:
                     if lt_pos > 0:
                         content = self.buffer[:lt_pos]
                         if content.strip():
-                            yield ('CONTENT', content)
+                            yield (XMLEventType.CONTENT, content)
 
                     # 进入标签解析状态
                     self.state = OuterParserState.IN_TAG
@@ -91,7 +92,7 @@ class OuterXMLParser:
                     if tag_name:
                         # 这是一个新的最外层标签
                         self.current_outer_tag = tag_name
-                        yield ('START_TAG', tag_name)
+                        yield (XMLEventType.START_TAG, tag_name)
                         self.state = OuterParserState.IN_CONTENT
 
                     self.buffer = self.buffer[gt_pos + 1:]  # 移除标签内容和 '>'
@@ -106,10 +107,10 @@ class OuterXMLParser:
                     if end_pos > 0:
                         content = self.buffer[:end_pos]
                         if content:
-                            yield ('CONTENT', content)
+                            yield (XMLEventType.CONTENT, content)
 
                     # 输出结束标签事件
-                    yield ('END_TAG', self.current_outer_tag)
+                    yield (XMLEventType.END_TAG, self.current_outer_tag)
 
                     # 重置状态
                     self.current_outer_tag = None
@@ -132,13 +133,13 @@ class OuterXMLParser:
                         if content_end > 0:
                             content = self.buffer[:content_end]
                             if content:
-                                yield ('CONTENT', content)
+                                yield (XMLEventType.CONTENT, content)
                         self.buffer = self.buffer[content_end:]
                         break
                     else:
                         # 没有可能的部分匹配，输出所有内容并等待更多数据
                         if self.buffer:
-                            yield ('CONTENT', self.buffer)
+                            yield (XMLEventType.CONTENT, self.buffer)
                         self.buffer = ""
                         break
     
@@ -171,7 +172,7 @@ class OuterXMLParser:
         # 如果还有未处理的内容
         if self.buffer:
             if self.buffer.strip():
-                yield ('CONTENT', self.buffer)
+                yield (XMLEventType.CONTENT, self.buffer)
 
         # 重置状态
         self.buffer = ""
